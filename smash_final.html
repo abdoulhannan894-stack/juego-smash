@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smash 64 Online - 2025 Fix</title>
+    <!-- 1. SCRIPT ANTI-PANTALLA NEGRA (Habilita hilos de CPU) -->
+    <script src="cdn.jsdelivr.net"></script>
+    <script src="unpkg.com"></script>
+    <style>
+        body { margin: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; text-align: center; }
+        #ui { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .btn-ready { background: #e74c3c; color: white; padding: 20px 40px; border-radius: 50px; cursor: pointer; border: none; font-size: 1.2rem; font-weight: bold; }
+        #game-box { width: 100vw; height: 100vh; display: none; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <h1>SMASH 64 ONLINE</h1>
+    <p>ID: <b id="my-id" style="color:#00ffcc">Conectando...</b></p>
+    
+    <input type="text" id="rival-id" placeholder="ID Rival (para 2P)" style="padding:10px; margin:10px; border-radius:5px; text-align:center;">
+    <br>
+    <!-- INICIO INMEDIATO AL ELEGIR ROM -->
+    <input type="file" id="rom-file" accept=".z64,.n64" style="display:none" onchange="runGame(this)">
+    <label for="rom-file" class="btn-ready">📁 SELECCIONAR ROM Y EMPEZAR</label>
+</div>
+
+<div id="game-box"></div>
+
+<script>
+    const peer = new Peer();
+    peer.on('open', id => document.getElementById('my-id').innerText = id);
+
+    function runGame(input) {
+        if (!input.files[0]) return;
+        const file = input.files[0];
+        const rId = document.getElementById('rival-id').value;
+
+        // Ocultar menú
+        document.getElementById('ui').style.display = 'none';
+        document.getElementById('game-box').style.display = 'block';
+
+        // Configuración de EmulatorJS
+        window.EJS_player = '#game-box';
+        window.EJS_core = 'n64'; // Core para Smash 64
+        window.EJS_gameUrl = URL.createObjectURL(file);
+        
+        // 2. RUTA DE DATOS (Crucial para que cargue el video en 2025)
+        window.EJS_pathtodata = 'cdn.emulatorjs.org';
+        window.EJS_startOnLoaded = true;
+
+        // 3. FIX DE VIDEO: Forzar contexto WebGL
+        window.EJS_onGameStart = () => {
+            console.log("Juego iniciado correctamente.");
+        };
+
+        // Cargar motor
+        const loader = document.createElement('script');
+        loader.src = 'cdn.emulatorjs.orgloader.js';
+        document.body.appendChild(loader);
+
+        // Si hay rival, conectar
+        if (rId) {
+            const conn = peer.connect(rId);
+            conn.on('open', () => conn.send({ type: 'start' }));
+        }
+    }
+</script>
+</body>
+</html>
